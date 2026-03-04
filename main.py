@@ -5,6 +5,7 @@ import pandas as pd
 import streamlit as st
 import random
 
+
 class Print_Iface:
     ## Handles plotting of the trajectory (Composition)
 
@@ -34,21 +35,21 @@ class Print_Iface:
         st.subheader(title)
         st.altair_chart(chart, use_container_width=True)
 
+
 ## Represent a cannonball, tracking its position and velocity.
-#
 class Cannonball:
+
     ## Create a new cannonball at the provided x position.
-    #  @param x the x position of the ball
-    #
     def __init__(self, x):
         self._x = x
         self._y = 0
         self._vx = 0
         self._vy = 0
 
-    ## Move the cannon ball, using its current velocities.
-    #  @param sec the amount of time that has elapsed.
-    #
+        # Composition: Cannonball HAS-A Print_Iface
+        self.printer = Print_Iface()
+
+    ## Move the cannon ball
     def move(self, sec, grav):
         dx = self._vx * sec
         dy = self._vy * sec
@@ -58,29 +59,27 @@ class Cannonball:
         self._x = self._x + dx
         self._y = self._y + dy
 
-    ## Get the current x position of the ball.
-    #  @return the x position of the ball
-    #
+    ## Get the current x position
     def getX(self):
         return self._x
 
-    ## Get the current y position of the ball.
-    #  @return the y position of the ball
-    #
+    ## Get the current y position
     def getY(self):
         return self._y
 
-    ## Shoot the canon ball.
-    #  @param angle the angle of the cannon (radians)
-    #  @param velocity the initial velocity of the ball
-    #
+    ## Shoot the cannon ball
     def shoot(self, angle, velocity, user_grav, step=0.1):
+
+        self._x = 0
+        self._y = 0
+
         self._vx = velocity * cos(angle)
         self._vy = velocity * sin(angle)
-        self.move(step, user_grav)
 
         xs = []
         ys = []
+
+        self.move(step, user_grav)
 
         while self.getY() > 1e-14:
             xs.append(self.getX())
@@ -89,8 +88,13 @@ class Cannonball:
 
         return xs, ys
 
+    ## Render the plot using Print_Iface
+    def render(self, xs, ys, title="Cannonball Trajectory"):
+        self.printer.plot_trajectory(xs, ys, title)
+
+
+## Crazyball subclass (Inheritance)
 class Crazyball(Cannonball):
-    ## Subclass of Cannonball that adds random movement
 
     def move(self, sec, grav):
         super().move(sec, grav)
@@ -104,44 +108,44 @@ class Crazyball(Cannonball):
             if self._y < 0:
                 self._y = 0
 
+
 def run_app():
+
     st.title("Cannonball Trajectory")
 
     angle_deg = st.number_input(
         "Starting angle (degrees)", min_value=0.0, max_value=90.0, value=45.0
     )
+
     velocity = st.selectbox("Initial velocity", options=[15, 25, 40], index=1)
 
-    gravity_options = {"Earth": 9.81}
+    gravity_options = {
+        "Earth": 9.81,
+        "Moon": 1.62
+    }
+
     gravity_name = st.selectbox("Gravity", options=list(gravity_options.keys()), index=0)
     gravity = gravity_options[gravity_name]
-    step = .1
+
+    step = 0.1
 
     col1, col2 = st.columns(2)
     simulate = col1.button("Simulate")
+    simulate_crazy = col2.button("Simulate Crazy")
+
+    angle_rad = radians(angle_deg)
 
     if simulate:
-        angle_rad = radians(angle_deg)
         ball = Cannonball(0)
         xs, ys = ball.shoot(angle_rad, velocity, gravity, step)
+        ball.render(xs, ys, f"{gravity_name} Cannonball")
 
-        if not xs:
-            st.warning("No trajectory points were generated.")
-            return
-
-        df = pd.DataFrame({"x": xs, "y": ys})
-
-        chart = (
-            alt.Chart(df)
-            .mark_line()
-            .encode(
-                x=alt.X("x:Q", scale=alt.Scale(domain=[0, 200]), title="Distance (m)"),
-                y=alt.Y("y:Q", scale=alt.Scale(domain=[0, 100]), title="Height (m)")
-            )
-            .properties(width=700, height=400)
-        )
-        st.altair_chart(chart, use_container_width=True)
+    if simulate_crazy:
+        crazy = Crazyball(0)
+        xs, ys = crazy.shoot(angle_rad, velocity, gravity, step)
+        crazy.render(xs, ys, f"{gravity_name} Crazyball")
 
 
 if __name__ == "__main__":
     run_app()
+    
