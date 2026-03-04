@@ -89,7 +89,20 @@ class Cannonball:
 
         return xs, ys
 
+class Crazyball(Cannonball):
+    ## Subclass of Cannonball that adds random movement
 
+    def move(self, sec, grav):
+        super().move(sec, grav)
+
+        self.rand_q = random.randrange(0, 10)
+
+        if self.getX() < 400:
+            self._x += random.uniform(-0.8, 0.8)
+            self._y += random.uniform(-0.8, 0.8)
+
+            if self._y < 0:
+                self._y = 0
 
 def run_app():
     st.title("Cannonball Trajectory")
