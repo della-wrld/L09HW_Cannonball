@@ -5,6 +5,34 @@ import pandas as pd
 import streamlit as st
 import random
 
+class Print_Iface:
+    ## Handles plotting of the trajectory (Composition)
+
+    def __init__(self):
+        self.x_domain = (0, 200)
+        self.y_domain = (0, 100)
+        self.width = 700
+        self.height = 400
+
+    def plot_trajectory(self, xs, ys, title="Trajectory"):
+        if not xs:
+            st.warning("No trajectory points were generated.")
+            return
+
+        df = pd.DataFrame({"x": xs, "y": ys})
+
+        chart = (
+            alt.Chart(df)
+            .mark_line()
+            .encode(
+                x=alt.X("x:Q", scale=alt.Scale(domain=list(self.x_domain)), title="Distance (m)"),
+                y=alt.Y("y:Q", scale=alt.Scale(domain=list(self.y_domain)), title="Height (m)")
+            )
+            .properties(width=self.width, height=self.height)
+        )
+
+        st.subheader(title)
+        st.altair_chart(chart, use_container_width=True)
 
 ## Represent a cannonball, tracking its position and velocity.
 #
@@ -60,6 +88,8 @@ class Cannonball:
             self.move(step, user_grav)
 
         return xs, ys
+
+
 
 def run_app():
     st.title("Cannonball Trajectory")
